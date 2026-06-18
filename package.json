@@ -1,0 +1,30 @@
+{
+  "name": "web-cv6",
+  "version": "1.0.0",
+  "description": "Web-CV6: WebGPU + Vue3 文明类游戏",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* build && pnpm -r --filter=./apps/* build",
+    "dev": "pnpm -r --parallel --filter=./apps/* dev",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "format:check": "pnpm -r format:check",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r exec rm -rf dist && rm -rf node_modules"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.1.1",
+      "onFail": "download"
+    }
+  },
+  "devDependencies": {
+    "vite": "8.0.16"
+  }
+}
