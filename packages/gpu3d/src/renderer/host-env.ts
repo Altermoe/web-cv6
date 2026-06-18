@@ -26,12 +26,12 @@ function tryMount(node: GpuHostNode): void {
       mountChild(child, container);
     }
     // 再构建 pipeline（需要子节点的 layout）
-    node.buildPipeline(container.device);
+    void node.buildPipeline(container.device);
   } else if (node instanceof VertexBufferNode) {
     node.buildBuffer(container.device);
     // 如果父 pipeline 已构建，需要重建（新 buffer layout）
     if (node.parent instanceof PipelineNode && node.parent.pipeline) {
-      node.parent.rebuildPipeline();
+      void node.parent.rebuildPipeline();
     }
   } else if (node instanceof DrawNode) {
     node.updateDrawParams();
@@ -60,6 +60,17 @@ function disposeSubtree(node: GpuHostNode): void {
     disposeSubtree(child);
   }
   node.dispose();
+}
+
+/**
+ * 将 kebab-case 字符串转换为 camelCase（最小化实现，不依赖 @vue/shared）
+ * "vertex-code" -> "vertexCode"
+ * "data" -> "data"
+ * "x-y-z" -> "xYZ"
+ */
+function camelizeKey(key: string): string {
+  if (!key.includes("-")) return key;
+  return key.replace(/-(?<c>[a-z])/g, (_, c: string) => c.toUpperCase());
 }
 
 /**
@@ -125,7 +136,7 @@ export const hostEnv: RendererOptions<HostElement, HostElement> = {
 
     // 4. 如果移除的是 VertexBufferNode，重建父 Pipeline
     if (node instanceof VertexBufferNode && parent instanceof PipelineNode && parent.pipeline) {
-      parent.rebuildPipeline();
+      void parent.rebuildPipeline();
     }
   },
 
@@ -151,43 +162,48 @@ export const hostEnv: RendererOptions<HostElement, HostElement> = {
   patchProp(el: HostElement, key: string, _prevValue: unknown, nextValue: unknown): void {
     if (!(el instanceof GpuHostNode)) return;
 
+    // 自定义元素既非 Vue 组件也非保留 HTML 元素，模板编译器不会自动转换属性名
+    // （参见编译产物：<gpu-pipeline :vertex-code="..."> 仍以 "vertex-code" 传入）
+    // 这里在分发到具体 handler 之前统一转为 camelCase，与 GPU 节点属性名约定保持一致。
+    const normalizedKey = camelizeKey(key);
+
     // PipelineNode 属性
     if (el instanceof PipelineNode) {
-      if (key === "vertexCode") {
+      if (normalizedKey === "vertexCode") {
         el.vertexCode = nextValue as string;
-        if (el.pipeline) el.rebuildPipeline();
+        if (el.pipeline) void el.rebuildPipeline();
         return;
       }
-      if (key === "fragmentCode") {
+      if (normalizedKey === "fragmentCode") {
         el.fragmentCode = nextValue as string;
-        if (el.pipeline) el.rebuildPipeline();
+        if (el.pipeline) void el.rebuildPipeline();
         return;
       }
-      if (key === "topology") {
+      if (normalizedKey === "topology") {
         el.topology = nextValue as GPUPrimitiveTopology;
-        if (el.pipeline) el.rebuildPipeline();
+        if (el.pipeline) void el.rebuildPipeline();
         return;
       }
-      if (key === "format") {
+      if (normalizedKey === "format") {
         el.format = nextValue as GPUTextureFormat;
-        if (el.pipeline) el.rebuildPipeline();
+        if (el.pipeline) void el.rebuildPipeline();
         return;
       }
     }
 
     // VertexBufferNode 属性
     if (el instanceof VertexBufferNode) {
-      if (key === "data") {
+      if (normalizedKey === "data") {
         el.writeData(nextValue as Float32Array);
         return;
       }
-      if (key === "layout") {
+      if (normalizedKey === "layout") {
         el.layout = nextValue as GPUVertexBufferLayout;
         if (el.buffer) {
           const container = el.getContainer();
           if (container) el.buildBuffer(container.device);
           if (el.parent instanceof PipelineNode && el.parent.pipeline) {
-            el.parent.rebuildPipeline();
+            void el.parent.rebuildPipeline();
           }
         }
         return;
@@ -196,30 +212,30 @@ export const hostEnv: RendererOptions<HostElement, HostElement> = {
 
     // DrawNode 属性
     if (el instanceof DrawNode) {
-      if (key === "vertexCount") {
+      if (normalizedKey === "vertexCount") {
         el.vertexCount = nextValue as number;
         el.updateDrawParams();
         return;
       }
-      if (key === "instanceCount") {
+      if (normalizedKey === "instanceCount") {
         el.instanceCount = nextValue as number;
         el.updateDrawParams();
         return;
       }
-      if (key === "firstVertex") {
+      if (normalizedKey === "firstVertex") {
         el.firstVertex = nextValue as number;
         el.updateDrawParams();
         return;
       }
-      if (key === "firstInstance") {
+      if (normalizedKey === "firstInstance") {
         el.firstInstance = nextValue as number;
         el.updateDrawParams();
         return;
       }
     }
 
-    // 通用属性存储
-    el.props[key] = nextValue;
+    // 通用属性存储：归一化后存入，方便用户调试时按原 key 查询
+    el.props[normalizedKey] = nextValue;
   },
 
   setElementText(_node: HostElement, _text: string): void {

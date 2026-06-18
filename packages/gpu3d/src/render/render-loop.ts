@@ -59,8 +59,12 @@ export class RenderLoop {
   /**
    * 递归渲染场景节点
    * 遇到 pipeline 节点设置管线，遇到 vertex-buffer 设置缓冲，遇到 draw 执行绘制
+   * 遇到 skipDraw 节点直接返回（其子树也不可能绘制，因为 setPipeline 没被调用）
    */
   private renderNode(node: SceneNode, encoder: GPURenderPassEncoder): void {
+    // 跳过无效 pipeline 节点及其子树，避免每帧触发 WebGPU 校验错误
+    if (node.skipDraw) return;
+
     if (node.pipeline) {
       encoder.setPipeline(node.pipeline);
     }

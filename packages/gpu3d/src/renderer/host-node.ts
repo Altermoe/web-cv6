@@ -104,10 +104,19 @@ export class PipelineNode extends GpuHostNode {
   /**
    * 从 device + 当前 props 构建 GPURenderPipeline
    * 收集子节点 VertexBufferNode 的 layout 作为 vertex buffers
+   * @returns 是否构建成功
    */
-  buildPipeline(device: GPUDevice): void {
+  buildPipeline(device: GPUDevice): boolean {
     // GPURenderPipeline 无 destroy()，由 GC 回收
     this.pipeline = null;
+    this.sceneNode.pipeline = null;
+
+    // 防御：vertex/fragment shader 至少有一段才能生成合法的 shader module
+    // （没有 @vertex 入口点的 module 会让 createRenderPipeline 报 EntryPoint 错误）
+    if (!this.vertexCode.trim() || !this.fragmentCode.trim()) {
+      this.sceneNode.skipDraw = true;
+      return false;
+    }
 
     // 收集子节点中 VertexBufferNode 的 layout
     const bufferLayouts: GPUVertexBufferLayout[] = [];
@@ -117,36 +126,50 @@ export class PipelineNode extends GpuHostNode {
       }
     }
 
-    const combinedCode = `${this.vertexCode}\n${this.fragmentCode}`;
-    const shaderModule = device.createShaderModule({ code: combinedCode });
+    try {
+      const combinedCode = `${this.vertexCode}\n${this.fragmentCode}`;
+      const shaderModule = device.createShaderModule({ code: combinedCode });
 
-    this.pipeline = device.createRenderPipeline({
-      layout: "auto",
-      vertex: {
-        module: shaderModule,
-        entryPoint: "vertexMain",
-        buffers: bufferLayouts,
-      },
-      fragment: {
-        module: shaderModule,
-        entryPoint: "fragmentMain",
-        targets: [{ format: this.format }],
-      },
-      primitive: {
-        topology: this.topology,
-      },
-    });
+      this.pipeline = device.createRenderPipeline({
+        layout: "auto",
+        vertex: {
+          module: shaderModule,
+          entryPoint: "vertexMain",
+          buffers: bufferLayouts,
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: "fragmentMain",
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: this.topology,
+        },
+      });
+    } catch (error) {
+      // WebGPU 校验失败（shader 编译错误、entry point 缺失等）时静默降级
+      // RenderLoop 会通过 sceneNode.skipDraw 跳过本管线，避免每帧刷屏
+      this.pipeline = null;
+      this.sceneNode.pipeline = null;
+      this.sceneNode.skipDraw = true;
+      // eslint-disable-next-line no-console
+      console.error("[gpu3d] Failed to build pipeline:", error);
+      return false;
+    }
 
     this.sceneNode.pipeline = this.pipeline;
+    this.sceneNode.skipDraw = false;
+    return true;
   }
 
   /**
    * 重建 pipeline（shader 代码 / topology / format 变化时）
+   * @returns 是否重建成功
    */
-  rebuildPipeline(): void {
+  rebuildPipeline(): boolean {
     const container = this.getContainer();
-    if (!container) return;
-    this.buildPipeline(container.device);
+    if (!container) return false;
+    return this.buildPipeline(container.device);
   }
 
   dispose(): void {

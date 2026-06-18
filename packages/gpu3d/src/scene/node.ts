@@ -22,6 +22,8 @@ export class SceneNode {
   vertexLayout: GPUVertexBufferLayout | null = null;
   /** 绘制参数（由 DrawNode 同步） */
   drawParams: { vertexCount: number; instanceCount: number } | null = null;
+  /** 标记此节点对应的 pipeline 不可用（如 shader 编译失败），RenderLoop 应跳过本子树 */
+  skipDraw = false;
 
   constructor(type: string) {
     this.id = nodeIdCounter++;
@@ -72,6 +74,7 @@ export class SceneNode {
     this.vertexBuffer = null;
     this.vertexLayout = null;
     this.drawParams = null;
+    this.skipDraw = false;
     this.gpuResources.clear();
     this.children = [];
     this.parent = null;

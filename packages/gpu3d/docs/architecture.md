@@ -78,41 +78,52 @@ gpu3d 采用**双渲染器架构**：DOM 渲染器负责 `<canvas>` 元素，GPU
 
 1. 渲染 `<canvas>` DOM 元素
 2. 初始化 WebGPU device/context
-3. 创建 `GpuContainer`（GPU 渲染器容器）
-4. 通过 `watchEffect` 拦截 slot children，调用 `gpuRender` 渲染
+3. 创建 `GpuContainer`（GPU 渲染器容器，持有 scene 引用）
+4. 启动 `RenderLoop`（独立于 Vue 响应式的 rAF 循环）
+5. 通过 `watchEffect` 拦截 slot children，调用 `gpuRender` 渲染
 
 ```typescript
 export const GpuCanvas = defineComponent({
   props: { width: Number, height: Number },
   setup(props, { slots }) {
     const canvasRef = ref<HTMLCanvasElement>();
-    let gpuContainer: GpuContainer | null = null;
+    const gpuContainerRef = ref<GpuContainer | null>(null);
     let renderLoop: RenderLoop | null = null;
+    let device: GPUDevice | null = null;
+
+    watchEffect(() => {
+      const container = gpuContainerRef.value;
+      if (!container) return;
+      const vnodes = slots.default?.() ?? [];
+      gpuRender(h(Fragment, null, vnodes), container);
+    });
 
     onMounted(async () => {
       const canvas = canvasRef.value!;
-      const device = await createDevice();
+      device = await createDevice();
       const format = navigator.gpu.getPreferredCanvasFormat();
       const context = configureCanvasContext(canvas, device, format);
 
-      gpuContainer = new GpuContainer(device, context, format);
-      renderLoop = new RenderLoop(device, context, gpuContainer.getScene());
+      const scene = new Scene();
+      renderLoop = new RenderLoop(device, context, scene.root);
       renderLoop.start();
 
-      // 核心：拦截 slot，用 GPU renderer 渲染
-      watchEffect(() => {
-        const vnodes = slots.default?.() ?? [];
-        gpuRender(vnodes, gpuContainer);
-      });
+      // 创建容器后赋值给 ref，触发 watchEffect
+      gpuContainerRef.value = new GpuContainer(device, context, format, scene);
     });
 
     onUnmounted(() => {
       renderLoop?.stop();
-      gpuContainer?.dispose();
+      gpuContainerRef.value?.dispose();
+      device?.destroy();
     });
 
-    // 只渲染 canvas DOM 元素，不渲染 slot children
-    return () => h("canvas", { ref: canvasRef, width: props.width, height: props.height });
+    return () =>
+      h("canvas", {
+        ref: canvasRef,
+        width: props.width,
+        height: props.height,
+      });
   },
 });
 ```
@@ -172,30 +183,48 @@ createElement(type: string, ...): GpuHostNode {
 
 ### patchProp 映射
 
+`patchProp` 是连接 Vue 响应式系统与 GPU 资源的**核心入口**。需要注意：自定义元素（既非 Vue 组件也非保留 HTML 元素）的属性名在模板编译时**不会**自动从 kebab-case 转 camelCase——`patchProp` 入口必须先归一化才能命中具体节点属性的 camelCase 约定（详见第七部分「自定义元素属性名归一化」）。
+
 ```typescript
+/**
+ * 将 kebab-case 字符串转换为 camelCase
+ * "vertex-code" -> "vertexCode"
+ */
+function camelizeKey(key: string): string {
+  if (!key.includes("-")) return key;
+  return key.replace(/-(?<c>[a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
 patchProp(el: GpuHostNode, key: string, prev: unknown, next: unknown): void {
-  if (el instanceof VertexBufferNode && key === 'data') {
-    // 高频路径：增量更新 vertex data
-    el.writeData(next as Float32Array)
-    return
+  const normalizedKey = camelizeKey(key);
+
+  // gpu-vertex-buffer:data (高频) → 增量写 buffer
+  if (el instanceof VertexBufferNode && normalizedKey === "data") {
+    el.writeData(next as Float32Array);
+    return;
   }
-  if (el instanceof UniformBufferNode && key === 'data') {
-    // 高频路径：增量更新 uniform data
-    el.writeData(next as Float32Array)
-    return
+
+  // gpu-pipeline:vertexCode/fragmentCode/topology/format (低频) → 重建 pipeline
+  if (el instanceof PipelineNode) {
+    if (normalizedKey === "vertexCode" || normalizedKey === "fragmentCode" ||
+        normalizedKey === "topology"   || normalizedKey === "format") {
+      // 赋值并按需重建（rebuild 内部用 try/catch 保护，失败时设置 skipDraw）
+      // ...
+      return;
+    }
   }
-  if (el instanceof PipelineNode && (key === 'vertexCode' || key === 'fragmentCode')) {
-    // 低频路径：重建 pipeline（shader 变化）
-    el.rebuildPipeline(next)
-    return
+
+  // gpu-draw:vertexCount/instanceCount (高频) → 同步到 SceneNode
+  if (el instanceof DrawNode) {
+    if (normalizedKey === "vertexCount" || normalizedKey === "instanceCount") {
+      el[normalizedKey] = next as number;
+      el.updateDrawParams();
+      return;
+    }
   }
-  if (el instanceof DrawNode && (key === 'vertexCount' || key === 'instanceCount')) {
-    // 高频路径：更新 draw 参数
-    el[key] = next
-    return
-  }
-  // 通用属性存储
-  el.props[key] = next
+
+  // 通用属性兜底
+  el.props[normalizedKey] = next;
 }
 ```
 
@@ -234,10 +263,14 @@ class PipelineNode extends GpuHostNode {
   format: GPUTextureFormat = "bgra8unorm";
 
   // 从 device + props 构建真实 pipeline
-  buildPipeline(device: GPUDevice): void;
-  rebuildPipeline(code: string): void;
+  // 内部用 try/catch 保护：shader 编译错误或 entry point 缺失时
+  // 设置 sceneNode.skipDraw = true 并 console.error，避免每帧刷屏
+  buildPipeline(device: GPUDevice): boolean;
 
-  dispose(): void; // pipeline.destroy()
+  // 当 vertexCode/fragmentCode/topology/format 变化时重建
+  rebuildPipeline(): boolean;
+
+  dispose(): void; // GPURenderPipeline 无 destroy()，置 null 即可由 GC 回收
 }
 
 // Vertex Buffer 节点
@@ -284,6 +317,11 @@ class SceneNode {
   vertexBuffer: GPUBuffer | null;
   vertexLayout: GPUVertexBufferLayout | null;
   drawParams: { vertexCount: number; instanceCount: number } | null;
+
+  // 管线不可用标记（shader 编译失败、entry point 缺失等）
+  // RenderLoop 遇到此标志会跳过本节点及子树的 setPipeline/draw，
+  // 避免每帧刷 WebGPU 校验错误日志
+  skipDraw: boolean;
 }
 ```
 
@@ -317,12 +355,16 @@ class RenderLoop {
   }
 
   private renderNode(node: SceneNode, encoder: GPURenderPassEncoder): void {
+    // 跳过无效 pipeline 节点及子树（避免每帧重复触发 WebGPU 校验错误）
+    if (node.skipDraw) return;
+
     if (node.pipeline) {
       encoder.setPipeline(node.pipeline);
     }
     if (node.vertexBuffer && node.vertexLayout) {
-      const bufferIndex = this.findBufferIndex(node);
-      encoder.setVertexBuffer(bufferIndex, node.vertexBuffer);
+      // MVP-2: 单 vertex buffer 场景固定使用 slot 0
+      // TODO: 多 vertex buffer 场景需要计算 slot 索引
+      encoder.setVertexBuffer(0, node.vertexBuffer);
     }
     if (node.drawParams) {
       encoder.draw(node.drawParams.vertexCount, node.drawParams.instanceCount);
@@ -424,7 +466,48 @@ export class BatchUpdateManager {
 
 ---
 
-## 第七部分：用户 API
+## 第七部分：自定义元素属性名归一化
+
+### 问题
+
+`createRenderer` 创建的自定义元素（`<gpu-pipeline>`、`<gpu-vertex-buffer>`、`<gpu-draw>`）**既不是 Vue 组件也不是保留 HTML 元素**。Vue 模板编译器对它们的处理方式与对 Vue 组件不同——**不会自动把 kebab-case 转为 camelCase**。
+
+可以通过查看 `apps/web/dist/assets/SceneView-*.js` 编译产物确认这一点：
+
+```js
+// 编译后
+s(`gpu-pipeline`,{"vertex-code":L,"fragment-code":R,topology:`triangle-list`,format:o(a)}, ...)
+s(`gpu-draw`,{"vertex-count":3}, null, -1)
+```
+
+而 Vue 组件会做这种转换——比如 `<MyComponent :some-prop="x" />` 编译后传给组件 setup 的 prop 名是 `someProp`。对自定义元素**不会**做这种转换，因为 Vue 模板编译器按 HTML 元素规范将属性原样保留。
+
+### 后果
+
+如果 `patchProp` 直接用 `key === "vertexCode"`（camelCase）匹配，永远不会命中从模板传过来的 `"vertex-code"`，导致 `vertexCode/fragmentCode` 等属性保持默认空串，shader 编译失败，每帧刷屏 `Entry point "vertexMain" doesn't exist` 错误。
+
+### 修复
+
+在 `patchProp` 入口先把 `key` 通过 `camelizeKey()` 归一化为 camelCase，再分发到具体节点属性的判断：
+
+```typescript
+function camelizeKey(key: string): string {
+  if (!key.includes("-")) return key;
+  return key.replace(/-(?<c>[a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
+patchProp(el, key, prev, next) {
+  const normalizedKey = camelizeKey(key);
+  // 后续所有 key === "..." 判断都基于 normalizedKey
+  // ...
+}
+```
+
+这样用户在模板里写 `vertex-code` 或 `vertexCode` 都能命中，符合 Vue 模板的自然写法（kebab-case），同时内部节点属性保持 camelCase 命名的一致性。
+
+---
+
+## 第八部分：用户 API
 
 ### 声明式模板
 
@@ -492,7 +575,7 @@ function updateTriangle() {
 
 ---
 
-## 第八部分：子模块职责
+## 第九部分：子模块职责
 
 ### backend 模块
 
@@ -507,7 +590,7 @@ function updateTriangle() {
 
 `src/scene/` — 原生场景树
 
-- `node.ts`：SceneNode 类（parent/children/gpuResources/pipeline/buffer/drawParams）
+- `node.ts`：SceneNode 类（parent/children/gpuResources/pipeline/buffer/drawParams/skipDraw）
 - `scene.ts`：Scene 根节点（遍历、dispose）
 
 ### render 模块
@@ -522,7 +605,7 @@ function updateTriangle() {
 `src/renderer/` — Vue createRenderer 自定义渲染器
 
 - `host-node.ts`：GpuHostNode 体系（GpuContainer/PipelineNode/VertexBufferNode/DrawNode/TextHostNode）
-- `host-env.ts`：RendererOptions 实现（createElement/patchProp/insert/remove/setElementText/parentNode等）
+- `host-env.ts`：RendererOptions 实现（createElement/patchProp/insert/remove/setElementText/parentNode等）+ camelizeKey 工具
 - `create-renderer.ts`：createRenderer 封装 + gpuRender + createGpuApp
 - `index.ts`：统一导出
 
@@ -534,9 +617,10 @@ function updateTriangle() {
 
 ---
 
-## 版本历史
+## 第十部分：版本历史
 
-| 版本  | 日期       | 描述                                                           |
-| ----- | ---------- | -------------------------------------------------------------- |
-| 1.0.0 | -          | 初始架构设计                                                   |
-| 2.0.0 | 2026-06-18 | MVP-2 架构重构：双渲染器架构、GPU 元素类型体系、场景树驱动渲染 |
+| 版本  | 日期       | 描述                                                                                               |
+| ----- | ---------- | -------------------------------------------------------------------------------------------------- |
+| 1.0.0 | -          | 初始架构设计                                                                                       |
+| 2.0.0 | 2026-06-18 | MVP-2 架构重构：双渲染器架构、GPU 元素类型体系、场景树驱动渲染                                     |
+| 2.0.1 | 2026-06-18 | MVP-2 修复：patchProp kebab→camel 归一化、PipelineNode.buildPipeline 失败保护 + SceneNode.skipDraw |
