@@ -184,10 +184,37 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/node':
+      specifier: 25.9.3
+      version: 25.9.3
+    '@vitejs/plugin-vue':
+      specifier: 6.0.7
+      version: 6.0.7
+    typescript:
+      specifier: 6.0.3
+      version: 6.0.3
+    unocss:
+      specifier: 66.7.2
+      version: 66.7.2
+    vite:
+      specifier: ^8.0.16
+      version: 8.0.16
+    vue-tsc:
+      specifier: 3.3.5
+      version: 3.3.5
+
 importers:
 
   .:
     devDependencies:
+      oxfmt:
+        specifier: 0.55.0
+        version: 0.55.0
+      oxlint:
+        specifier: 1.70.0
+        version: 1.70.0
       vite:
         specifier: 8.0.16
         version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
@@ -248,28 +275,22 @@ importers:
         version: 5.1.0(@vue/compiler-sfc@3.5.38)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.38(typescript@6.0.3)))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.38(typescript@6.0.3))
     devDependencies:
       '@types/node':
-        specifier: 25.9.3
+        specifier: 'catalog:'
         version: 25.9.3
       '@vitejs/plugin-vue':
-        specifier: 6.0.7
+        specifier: 'catalog:'
         version: 6.0.7(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.38(typescript@6.0.3))
-      oxfmt:
-        specifier: 0.55.0
-        version: 0.55.0
-      oxlint:
-        specifier: 1.70.0
-        version: 1.70.0
       typescript:
-        specifier: 6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       unocss:
-        specifier: 66.7.2
+        specifier: 'catalog:'
         version: 66.7.2(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
       vite:
-        specifier: 8.0.16
+        specifier: 'catalog:'
         version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
       vue-tsc:
-        specifier: 3.3.5
+        specifier: 'catalog:'
         version: 3.3.5(typescript@6.0.3)
 
   packages/core:

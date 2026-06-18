@@ -12,6 +12,7 @@
     "dev": "pnpm -r --parallel --filter=./apps/* dev",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
     "format": "pnpm -r format",
     "format:check": "pnpm -r format:check",
     "typecheck": "pnpm -r typecheck",
@@ -25,6 +26,8 @@
     }
   },
   "devDependencies": {
+    "oxfmt": "0.55.0",
+    "oxlint": "1.70.0",
     "vite": "8.0.16"
   }
 }

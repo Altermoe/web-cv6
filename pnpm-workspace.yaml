@@ -4,3 +4,10 @@ packages:
 allowBuilds:
   esbuild: true
   vue-demi: true
+catalog:
+  '@types/node': 25.9.3
+  '@vitejs/plugin-vue': 6.0.7
+  typescript: 6.0.3
+  unocss: 66.7.2
+  vite: ^8.0.16
+  vue-tsc: 3.3.5
