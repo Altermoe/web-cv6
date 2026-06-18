@@ -2,6 +2,7 @@
 import { Toggle } from "reka-ui";
 import { ref } from "vue";
 import { useCounterStore } from "../stores/counter";
+import { RouterLink } from "vue-router";
 
 const counter = useCounterStore();
 const pressed = ref(false);
@@ -41,5 +42,12 @@ const pressed = ref(false);
     >
       reka-ui Toggle: {{ pressed ? "ON" : "OFF" }}
     </Toggle>
+
+    <RouterLink
+      to="/scene"
+      class="px-6 py-3 rounded-lg bg-violet-700 hover:bg-violet-600 transition-colors text-white font-medium"
+    >
+      WebGPU Scene Demo
+    </RouterLink>
   </div>
 </template>

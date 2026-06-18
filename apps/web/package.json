@@ -29,6 +29,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
+    "@webgpu/types": "^0.1.70",
     "typescript": "catalog:",
     "unocss": "catalog:",
     "vite": "catalog:",

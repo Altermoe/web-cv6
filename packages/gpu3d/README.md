@@ -5,22 +5,25 @@
 ## 设计理念
 
 ### 1. 声明式资源管理
+
 利用 Vue 3 `createRenderer` 自定义渲染器构建，组件生命周期（mount/unmount）自动映射 WebGPU 资源的创建与销毁（Buffer, Texture, Pipeline）。实现低心智负担的 GPU 内存垃圾回收（GC）。
 
 ### 2. 高性能运行时隔离
+
 Vue 只负责"资源声明与管线编排"，在组件挂载时生成底层原生场景树（Scene）与渲染图（RenderGraph）。真正的每帧渲染循环（Render Loop）完全脱离 Vue VNode Diff，避免 JS 层 CPU 开销爆炸。
 
 ### 3. 数据驱动更新
+
 利用 Vue 响应式系统，在 `patchProp` 阶段精准拦截属性变化，通过 `device.queue.writeBuffer` 增量更新 GPU 显存。
 
 ## 技术栈
 
-| 层级 | 技术选型 |
-|------|----------|
-| 图形 API | WebGPU + WGSL |
+| 层级     | 技术选型               |
+| -------- | ---------------------- |
+| 图形 API | WebGPU + WGSL          |
 | 组件框架 | Vue 3 (createRenderer) |
-| 状态管理 | Pinia (仅 UI 层) |
-| 核心逻辑 | TypeScript (ES2022+) |
+| 状态管理 | Pinia (仅 UI 层)       |
+| 核心逻辑 | TypeScript (ES2022+)   |
 
 ## 快速上手
 
@@ -33,58 +36,58 @@ pnpm install @webcv6/gpu3d
 ### 基础使用
 
 ```typescript
-import { createApp } from 'vue'
-import { createGPURenderer, Scene, Camera, DirectionalLight } from '@webcv6/gpu3d'
+import { createApp } from "vue";
+import { createGPURenderer, Scene, Camera, DirectionalLight } from "@webcv6/gpu3d";
 
 // 创建 GPU 渲染器
 const gpuRenderer = createGPURenderer({
-  canvas: document.querySelector('canvas') as HTMLCanvasElement,
+  canvas: document.querySelector("canvas") as HTMLCanvasElement,
   adapter: await navigator.gpu.requestAdapter(),
-})
+});
 
 // 创建场景
-const scene = new Scene()
+const scene = new Scene();
 
 // 创建相机
 const camera = new Camera({
   fov: 60,
   near: 0.1,
   far: 1000,
-  position: [0, 10, 20]
-})
+  position: [0, 10, 20],
+});
 
 // 创建光源
 const light = new DirectionalLight({
   direction: [-1, -1, -1],
-  intensity: 1.0
-})
+  intensity: 1.0,
+});
 
 // 挂载到渲染器
-gpuRenderer.mount(scene, camera, light)
+gpuRenderer.mount(scene, camera, light);
 
 // 启动渲染循环
-gpuRenderer.start()
+gpuRenderer.start();
 
 // 销毁
-gpuRenderer.unmount()
+gpuRenderer.unmount();
 ```
 
 ### 与 Vue 组件集成
 
 ```vue
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-import { useGPU } from '@webcv6/gpu3d'
+import { onMounted, onUnmounted } from "vue";
+import { useGPU } from "@webcv6/gpu3d";
 
-const gpu = useGPU()
+const gpu = useGPU();
 
 onMounted(() => {
-  gpu.mount()
-})
+  gpu.mount();
+});
 
 onUnmounted(() => {
-  gpu.unmount()
-})
+  gpu.unmount();
+});
 </script>
 
 <template>
@@ -139,38 +142,38 @@ packages/gpu3d/
 
 ```typescript
 // 主入口
-export { createGPURenderer } from './createGPURenderer'
-export type { GPURendererOptions, GPURenderer } from './types'
+export { createGPURenderer } from "./createGPURenderer";
+export type { GPURendererOptions, GPURenderer } from "./types";
 
 // 场景模块
-export { Scene } from './scene/Scene'
-export { Entity } from './scene/Entity'
-export { Mesh } from './scene/Mesh'
-export { Transform } from './scene/Transform'
-export { Terrain } from './scene/Terrain'
+export { Scene } from "./scene/Scene";
+export { Entity } from "./scene/Entity";
+export { Mesh } from "./scene/Mesh";
+export { Transform } from "./scene/Transform";
+export { Terrain } from "./scene/Terrain";
 
 // 渲染模块
-export { Camera } from './render/Camera'
-export { DirectionalLight } from './render/DirectionalLight'
-export { RenderGraph } from './render/RenderGraph'
+export { Camera } from "./render/Camera";
+export { DirectionalLight } from "./render/DirectionalLight";
+export { RenderGraph } from "./render/RenderGraph";
 
 // 模拟模块
-export { WorldState } from './sim/WorldState'
-export { createWorld } from './sim/createWorld'
+export { WorldState } from "./sim/WorldState";
+export { createWorld } from "./sim/createWorld";
 
 // 端口模块
-export type { InputPort } from './port/InputPort'
-export type { StateStream } from './port/StateStream'
+export type { InputPort } from "./port/InputPort";
+export type { StateStream } from "./port/StateStream";
 ```
 
 ### 子模块导出
 
 ```typescript
-import { Device } from '@webcv6/gpu3d/backend'
-import { RenderGraph } from '@webcv6/gpu3d/render'
-import { Scene } from '@webcv6/gpu3d/scene'
-import { WorldState } from '@webcv6/gpu3d/sim'
-import { InputPort } from '@webcv6/gpu3d/port'
+import { Device } from "@webcv6/gpu3d/backend";
+import { RenderGraph } from "@webcv6/gpu3d/render";
+import { Scene } from "@webcv6/gpu3d/scene";
+import { WorldState } from "@webcv6/gpu3d/sim";
+import { InputPort } from "@webcv6/gpu3d/port";
 ```
 
 ## 与上层应用的集成方式
@@ -209,11 +212,13 @@ apps/web → packages/ui → packages/core
 ### 输入输出契约
 
 **InputPort** - 接收标准化输入：
+
 - 点击坐标（屏幕空间 → 世界空间转换）
 - 拖拽操作（相机控制、框选）
 - 键盘事件（快捷键、回合结束）
 
 **StateStream** - 可订阅的世界状态：
+
 - `selectedUnit`: 当前选中单位
 - `turnNumber`: 回合数
 - `resources`: 资源状态

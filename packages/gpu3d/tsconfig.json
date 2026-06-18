@@ -2,13 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "@webgpu/types"],
+    "outDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": ".",
+    "types": ["@webgpu/types"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

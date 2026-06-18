@@ -192,6 +192,12 @@ catalogs:
     '@vitejs/plugin-vue':
       specifier: 6.0.7
       version: 6.0.7
+    oxfmt:
+      specifier: 0.55.0
+      version: 0.55.0
+    oxlint:
+      specifier: 1.70.0
+      version: 1.70.0
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -201,6 +207,9 @@ catalogs:
     vite:
       specifier: ^8.0.16
       version: 8.0.16
+    vue:
+      specifier: 3.5.38
+      version: 3.5.38
     vue-tsc:
       specifier: 3.3.5
       version: 3.3.5
@@ -280,6 +289,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
         version: 6.0.7(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.38(typescript@6.0.3))
+      '@webgpu/types':
+        specifier: ^0.1.70
+        version: 0.1.70
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -296,18 +308,30 @@ importers:
   packages/core:
     devDependencies:
       typescript:
-        specifier: ^5.6.0
-        version: 5.6.2
+        specifier: 'catalog:'
+        version: 6.0.3
 
   packages/gpu3d:
     dependencies:
       '@webcv6/core':
         specifier: workspace:*
         version: link:../core
+      vue:
+        specifier: 'catalog:'
+        version: 3.5.38(typescript@6.0.3)
     devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.70
+        version: 0.1.70
+      oxfmt:
+        specifier: 'catalog:'
+        version: 0.55.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.70.0
       typescript:
-        specifier: ^5.6.0
-        version: 5.6.2
+        specifier: 'catalog:'
+        version: 6.0.3
 
   packages/server:
     dependencies:
@@ -1572,6 +1596,9 @@ packages:
     resolution: {integrity: sha512-bZpge9eSXwa4ToSiqJ7j6KRwhAsneMFoSz3LMWKQDkqimm3D/tbFlrklrs/IOqC8tEcYmXQZJ6N0UrjhBirVCg==}
     peerDependencies:
       vue: ^3.5.0
+
+  '@webgpu/types@0.1.70':
+    resolution: {integrity: sha512-LFiNHHKMvmAEvwVew3JLJmTdShhbdwRFSImUshGhE2mGE8ybQzIo63l5uRp+YKnNx+8Qno8Kf6gN+DKMreIJCA==}
 
   acorn@8.17.0:
     resolution: {integrity: sha512-xRQbDb9BnwDafYNn6Vwl839DYVjqXYb1XVGtWAZ1kcDc6iwAL4hg3B1dZlRiuENFeO2H53gFG3in621AdERVAg==}
@@ -3117,6 +3144,8 @@ snapshots:
   '@vueuse/shared@14.3.0(vue@3.5.38(typescript@6.0.3))':
     dependencies:
       vue: 3.5.38(typescript@6.0.3)
+
+  '@webgpu/types@0.1.70': {}
 
   acorn@8.17.0: {}
 
