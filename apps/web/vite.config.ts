@@ -4,6 +4,9 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [vue(), unocss()],
+  server: {
+    port: 26618,
+  },
   resolve: {
     tsconfigPaths: true,
   },
