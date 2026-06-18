@@ -14,20 +14,23 @@ export {
 export { SceneNode, Scene } from "./scene";
 
 // Render - 渲染管线
-export { RenderPass, RenderLoop, TrianglePass } from "./render";
+export { RenderPass, RenderLoop } from "./render";
 
 // Renderer - Vue createRenderer 自定义渲染器
 export {
-  render,
+  gpuRender,
   createApp,
   createGpuApp,
-  ContainerHostNode,
-  ElementHostNode,
+  GpuContainer,
+  PipelineNode,
+  VertexBufferNode,
+  DrawNode,
   TextHostNode,
+  type GpuHostNode,
   type HostNode,
   hostEnv,
-  initContainerScene,
+  createGpuContainer,
 } from "./renderer";
 
 // Components - 声明式 GPU 组件
-export { GpuCanvas, GpuTriangle } from "./components";
+export { GpuCanvas } from "./components";
