@@ -1,0 +1,30 @@
+{
+  "name": "@webcv6/mcp-server",
+  "version": "0.0.0",
+  "description": "WebGPU 自动评估 MCP Server — Playwright + CDP 截图反馈工具",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "webgpu-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.23.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "playwright": "1.52.0",
+    "tsup": "8.5.0",
+    "tsx": "4.20.0",
+    "typescript": "catalog:",
+    "vitest": "3.2.3"
+  }
+}
