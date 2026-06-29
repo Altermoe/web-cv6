@@ -1,0 +1,73 @@
+/**
+ * Civ 6 Theme Variables
+ * Inspired by Sid Meier's Civilization VI's ornate, warm UI palette
+ */
+:root {
+  /* === Core Palette === */
+  --civ-bg-primary: #1a1a2e;
+  --civ-bg-secondary: #16213e;
+  --civ-bg-tertiary: #0f3460;
+  --civ-bg-panel: #1e2a3a;
+  --civ-bg-surface: #243447;
+
+  /* === Gold / Amber Accent (primary) === */
+  --civ-gold-50: #fdf8e8;
+  --civ-gold-100: #f9edc4;
+  --civ-gold-200: #f3d98a;
+  --civ-gold-300: #edc44f;
+  --civ-gold-400: #e6b422;
+  --civ-gold-500: #d4a017;
+  --civ-gold-600: #b8860b;
+  --civ-gold-700: #8b6914;
+  --civ-gold-800: #6b4f10;
+  --civ-gold-900: #4a3508;
+
+  /* === Stone / Gray === */
+  --civ-stone-50: #f5f5f0;
+  --civ-stone-100: #e8e6df;
+  --civ-stone-200: #d1cdc2;
+  --civ-stone-300: #b5b0a1;
+  --civ-stone-400: #9a9485;
+  --civ-stone-500: #7f796a;
+  --civ-stone-600: #645f52;
+  --civ-stone-700: #4a463c;
+  --civ-stone-800: #302e28;
+  --civ-stone-900: #1a1915;
+
+  /* === Semantic Colors === */
+  --civ-text-primary: #f0ebe0;
+  --civ-text-secondary: #b5b0a1;
+  --civ-text-muted: #7f796a;
+  --civ-text-accent: var(--civ-gold-400);
+  --civ-text-disabled: #555550;
+
+  --civ-border-default: #3a3830;
+  --civ-border-active: var(--civ-gold-500);
+  --civ-border-focus: var(--civ-gold-400);
+
+  --civ-success: #4caf50;
+  --civ-warning: #ff9800;
+  --civ-danger: #f44336;
+  --civ-info: #2196f3;
+
+  /* === Shadows === */
+  --civ-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --civ-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --civ-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --civ-shadow-glow: 0 0 12px rgba(230, 180, 34, 0.3);
+
+  /* === Typography === */
+  --civ-font-sans: "Segoe UI", "Noto Sans SC", system-ui, sans-serif;
+  --civ-font-display: "Georgia", "Noto Serif SC", serif;
+
+  /* === Sizes === */
+  --civ-radius-sm: 2px;
+  --civ-radius-md: 4px;
+  --civ-radius-lg: 8px;
+  --civ-radius-xl: 12px;
+
+  /* === Transitions === */
+  --civ-transition-fast: 120ms ease;
+  --civ-transition-normal: 200ms ease;
+  --civ-transition-slow: 350ms ease;
+}

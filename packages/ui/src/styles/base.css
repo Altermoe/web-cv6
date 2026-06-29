@@ -1,0 +1,41 @@
+@import "./variables.css";
+
+/* Global reset for component library */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.civ-ui {
+  font-family: var(--civ-font-sans);
+  color: var(--civ-text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utility: gold border ornament */
+.civ-border-ornament {
+  border: 1px solid var(--civ-gold-700);
+  border-image: linear-gradient(
+    180deg,
+    var(--civ-gold-500),
+    var(--civ-gold-800)
+  ) 1;
+}
+
+/* Scrollbar styling */
+.civ-ui ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.civ-ui ::-webkit-scrollbar-track {
+  background: var(--civ-bg-primary);
+}
+.civ-ui ::-webkit-scrollbar-thumb {
+  background: var(--civ-stone-600);
+  border-radius: 3px;
+}
+.civ-ui ::-webkit-scrollbar-thumb:hover {
+  background: var(--civ-gold-700);
+}

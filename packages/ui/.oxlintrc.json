@@ -1,0 +1,7 @@
+{
+  "rules": {
+    "no-null": "off",
+    "no-ternary": "off",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+  }
+}
