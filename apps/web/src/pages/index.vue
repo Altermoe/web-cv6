@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
  * Civ 6 Main Menu — 首页
- * 还原《文明6》主菜单界面风格
+ * 还原《文明6》PC版主菜单界面风格
  */
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { CvButton } from "@webcv6/ui";
 
 const router = useRouter();
 const ready = ref(false);
+const activeIndex = ref(1); // "单人游戏" 默认高亮
 
 onMounted(() => {
   requestAnimationFrame(() => {
@@ -16,82 +16,87 @@ onMounted(() => {
   });
 });
 
-function goScene() {
-  router.push("/scene");
+interface MenuItem {
+  label: string;
+  icon?: string;
+  action?: () => void;
+  disabled?: boolean;
 }
-function goDev() {
-  router.push("/development");
+
+const menuItems: MenuItem[] = [
+  { label: "额外内容", icon: "⚙", disabled: true },
+  { label: "单人游戏", action: () => router.push("/scene") },
+  { label: "多人游戏", disabled: true },
+  { label: "游戏设置", disabled: true },
+  { label: "组件文档", action: () => router.push("/development") },
+  { label: "制作人员", action: () => router.push("/development") },
+];
+
+function selectItem(index: number) {
+  activeIndex.value = index;
+  const item = menuItems[index];
+  if (item.action) {
+    item.action();
+  }
 }
 </script>
 
 <template>
   <div class="main-menu">
-    <!-- 背景层 -->
+    <!-- 背景层：暖棕/羊皮纸质感 -->
     <div class="main-menu__bg" />
     <div class="main-menu__vignette" />
 
-    <!-- 罗盘装饰 -->
-    <div class="main-menu__compass" :class="{ 'is-ready': ready }">
-      <div class="compass__outer" />
-      <div class="compass__inner" />
-      <div class="compass__needle" />
-    </div>
-
-    <!-- 标题 -->
+    <!-- 标题区：左上角 -->
     <header class="main-menu__header" :class="{ 'is-ready': ready }">
-      <span class="main-menu__subtitle">Sid Meier's</span>
-      <h1 class="main-menu__title">
-        <span class="title__civ">Civilization</span>
-        <span class="title__vi">VI</span>
-      </h1>
-      <span class="main-menu__tagline">Web Edition</span>
+      <div class="title-group">
+        <span class="main-menu__subtitle">SID MEIER'S</span>
+        <h1 class="main-menu__title">
+          <span class="title__civ">CIVILIZATION</span>
+          <span class="title__emblem">
+            <span class="emblem__circle">
+              <span class="emblem__roman">VI</span>
+            </span>
+          </span>
+        </h1>
+      </div>
     </header>
 
-    <!-- 主菜单按钮 -->
+    <!-- 主菜单：右对齐文字链接 -->
     <nav class="main-menu__nav" :class="{ 'is-ready': ready }">
-      <div class="menu-item" style="--i: 0">
-        <CvButton variant="primary" size="xl" block @click="goScene">
-          开始游戏
-        </CvButton>
-      </div>
-      <div class="menu-item" style="--i: 1">
-        <CvButton variant="primary" size="xl" block @click="goDev">
-          组件文档
-        </CvButton>
-      </div>
-      <div class="menu-item" style="--i: 2">
-        <CvButton variant="secondary" size="xl" block disabled>
-          多人游戏
-        </CvButton>
-      </div>
-      <div class="menu-item" style="--i: 3">
-        <CvButton variant="secondary" size="xl" block disabled>
-          游戏设置
-        </CvButton>
-      </div>
-      <div class="menu-item" style="--i: 4">
-        <CvButton variant="ghost" size="lg" block disabled>
-          制作人员
-        </CvButton>
+      <div
+        v-for="(item, i) in menuItems"
+        :key="item.label"
+        class="menu-link"
+        :class="{
+          'is-active': activeIndex === i,
+          'is-disabled': item.disabled,
+        }"
+        :style="{ '--i': i }"
+        @click="!item.disabled && selectItem(i)"
+        @mouseenter="!item.disabled && (activeIndex = i)"
+      >
+        <span v-if="item.icon" class="menu-link__icon">{{ item.icon }}</span>
+        <span class="menu-link__text">{{ item.label }}</span>
       </div>
     </nav>
 
     <!-- 底部信息栏 -->
     <footer class="main-menu__footer" :class="{ 'is-ready': ready }">
-      <div class="footer__news">
-        <span class="footer__news-label">公告</span>
-        <span class="footer__news-text">
-          Web-CV6 — 基于 WebGPU + Vue 3 的文明类游戏引擎
-        </span>
+      <div class="footer__left">
+        <span class="footer__logos">2K &nbsp;|&nbsp; FIRAXIS</span>
+        <span class="footer__version">VERSION 1.0.1</span>
       </div>
-      <div class="footer__version">v0.1.0-alpha</div>
+      <div class="footer__right">
+        <span class="footer__build">WEB BUILD</span>
+      </div>
     </footer>
   </div>
 </template>
 
 <style scoped>
 /* ============================================================
-   Civ 6 Main Menu
+   Civ 6 Main Menu — PC 版风格还原
    ============================================================ */
 
 .main-menu {
@@ -100,26 +105,22 @@ function goDev() {
   height: 100vh;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   font-family: var(--civ-font-sans);
   color: var(--civ-text-primary);
 }
 
-/* --- 背景层 --- */
+/* --- 背景层：暖棕/羊皮纸质感 --- */
 .main-menu__bg {
   position: absolute;
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse 120% 80% at 50% 40%, rgba(15, 52, 96, 0.6) 0%, transparent 70%),
-    radial-gradient(ellipse 80% 60% at 30% 70%, rgba(30, 42, 58, 0.8) 0%, transparent 60%),
-    linear-gradient(180deg, #0a0f1a 0%, #0d1b2a 30%, #1b2838 60%, #0a0f1a 100%);
-  background-size: 100% 100%;
+    radial-gradient(ellipse 100% 80% at 30% 50%, rgba(90, 70, 40, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 60% at 70% 30%, rgba(60, 50, 30, 0.25) 0%, transparent 60%),
+    linear-gradient(180deg, #2a2318 0%, #1e1a12 30%, #151209 70%, #0e0c07 100%);
 }
 
-/* 地图网格纹理叠加 */
+/* 纸张纹理叠加 */
 .main-menu__bg::before {
   content: "";
   position: absolute;
@@ -128,17 +129,28 @@ function goDev() {
     repeating-linear-gradient(
       0deg,
       transparent,
-      transparent 59px,
-      rgba(230, 180, 34, 0.03) 59px,
-      rgba(230, 180, 34, 0.03) 60px
+      transparent 3px,
+      rgba(120, 100, 60, 0.015) 3px,
+      rgba(120, 100, 60, 0.015) 4px
     ),
     repeating-linear-gradient(
       90deg,
       transparent,
-      transparent 59px,
-      rgba(230, 180, 34, 0.03) 59px,
-      rgba(230, 180, 34, 0.03) 60px
+      transparent 4px,
+      rgba(100, 80, 50, 0.01) 4px,
+      rgba(100, 80, 50, 0.01) 5px
     );
+  opacity: 0.8;
+}
+
+/* 地图纹理暗纹 */
+.main-menu__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 400px at 20% 60%, rgba(80, 60, 30, 0.15) 0%, transparent 100%),
+    radial-gradient(circle 300px at 80% 30%, rgba(60, 45, 20, 0.1) 0%, transparent 100%);
 }
 
 /* 暗角效果 */
@@ -146,110 +158,48 @@ function goDev() {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+  background: radial-gradient(ellipse 75% 70% at 35% 45%, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
   pointer-events: none;
 }
 
-/* --- 罗盘装饰（左上角）--- */
-.main-menu__compass {
-  position: absolute;
-  top: 32px;
-  left: 32px;
-  width: 80px;
-  height: 80px;
-  z-index: 10;
-  opacity: 0;
-  transform: scale(0.8) rotate(-30deg);
-  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.main-menu__compass.is-ready {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-
-.compass__outer {
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--civ-gold-700);
-  border-radius: 50%;
-  animation: compass-rotate-reverse 30s linear infinite;
-}
-.compass__outer::before {
-  content: "";
-  position: absolute;
-  top: -4px;
-  left: 50%;
-  width: 8px;
-  height: 8px;
-  margin-left: -4px;
-  background: var(--civ-gold-500);
-  border-radius: 50%;
-}
-
-.compass__inner {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  border: 1px solid var(--civ-gold-800);
-  border-radius: 50%;
-  animation: compass-rotate 20s linear infinite;
-}
-
-.compass__needle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2px;
-  height: 36px;
-  margin-left: -1px;
-  margin-top: -18px;
-  background: linear-gradient(180deg, var(--civ-gold-400) 50%, var(--civ-stone-600) 50%);
-}
-
-@keyframes compass-rotate {
-  to { transform: rotate(360deg); }
-}
-@keyframes compass-rotate-reverse {
-  to { transform: rotate(-360deg); }
-}
-
-/* --- 标题区 --- */
+/* --- 标题区：左上角 --- */
 .main-menu__header {
-  position: relative;
+  position: absolute;
+  top: 40px;
+  left: 48px;
   z-index: 10;
-  text-align: center;
-  margin-bottom: 48px;
   opacity: 0;
-  transform: translateY(-20px);
-  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
+  transform: translateY(-16px);
+  transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
 }
 .main-menu__header.is-ready {
   opacity: 1;
   transform: translateY(0);
 }
 
+.title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .main-menu__subtitle {
-  display: block;
-  font-family: var(--civ-font-display);
-  font-size: 14px;
-  letter-spacing: 4px;
+  font-family: var(--civ-font-sans);
+  font-size: 11px;
+  letter-spacing: 5px;
   text-transform: uppercase;
-  color: var(--civ-text-secondary);
-  margin-bottom: 4px;
+  color: var(--civ-stone-400);
 }
 
 .main-menu__title {
   font-family: var(--civ-font-display);
-  font-size: 64px;
+  font-size: 38px;
   font-weight: 700;
   line-height: 1;
   margin: 0;
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
 }
 
 .title__civ {
@@ -259,77 +209,109 @@ function goDev() {
   background-clip: text;
 }
 
-.title__vi {
+.title__emblem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emblem__circle {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--civ-gold-600);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(30, 25, 15, 0.8) 0%, rgba(20, 17, 10, 0.9) 100%);
+}
+
+.emblem__roman {
+  font-family: var(--civ-font-display);
+  font-size: 18px;
+  font-weight: 700;
   background: linear-gradient(180deg, var(--civ-gold-300) 0%, var(--civ-gold-700) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 72px;
 }
 
-.main-menu__tagline {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  color: var(--civ-text-muted);
-  margin-top: 8px;
-}
-
-/* --- 菜单按钮区 --- */
+/* --- 菜单：右侧偏上，文字链接风格 --- */
 .main-menu__nav {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  right: 12%;
+  transform: translateY(-50%);
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 320px;
+  gap: 4px;
+  min-width: 200px;
 }
 
-.menu-item {
+.menu-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  font-family: var(--civ-font-display);
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  color: var(--civ-stone-400);
+  cursor: pointer;
+  transition: all 0.2s ease;
   opacity: 0;
-  transform: translateX(-24px);
-  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: calc(0.3s + var(--i) * 0.08s);
+  transform: translateX(20px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+  transition-delay: calc(0.3s + var(--i) * 0.06s);
 }
-.main-menu__nav.is-ready .menu-item {
+
+.main-menu__nav.is-ready .menu-link {
   opacity: 1;
   transform: translateX(0);
 }
 
-/* 覆盖 CvButton 的 block 样式，让菜单按钮更宽更高 */
-.main-menu__nav :deep(.cv-button) {
-  font-family: var(--civ-font-display);
+.menu-link:hover:not(.is-disabled) {
+  color: var(--civ-gold-200);
+  text-shadow: 0 0 12px rgba(230, 180, 34, 0.3);
+}
+
+.menu-link.is-active:not(.is-disabled) {
+  color: var(--civ-gold-100);
+  text-shadow: 0 0 16px rgba(230, 180, 34, 0.4);
+}
+
+/* 高亮条：选中项左侧金色竖线 */
+.menu-link.is-active:not(.is-disabled)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--civ-gold-400);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(230, 180, 34, 0.5);
+}
+
+.menu-link.is-disabled {
+  color: var(--civ-stone-600);
+  cursor: default;
+}
+
+.menu-link__icon {
   font-size: 16px;
-  letter-spacing: 2px;
-  height: 48px;
-  border-radius: var(--civ-radius-sm);
+  opacity: 0.7;
 }
 
-/* secondary 变体微调：更暗的底色 */
-.main-menu__nav :deep(.cv-button--secondary) {
-  background: linear-gradient(180deg, rgba(36, 52, 71, 0.9) 0%, rgba(26, 25, 21, 0.9) 100%);
-  border-color: var(--civ-gold-800);
-  color: var(--civ-text-secondary);
-}
-.main-menu__nav :deep(.cv-button--secondary:hover:not(.cv-button--disabled)) {
-  background: linear-gradient(180deg, rgba(46, 62, 81, 0.95) 0%, rgba(36, 45, 31, 0.95) 100%);
-  border-color: var(--civ-gold-600);
-  color: var(--civ-text-primary);
-}
-
-/* ghost 变体微调 */
-.main-menu__nav :deep(.cv-button--ghost) {
-  background: transparent;
-  border-color: var(--civ-border-default);
-  color: var(--civ-text-muted);
-  height: 36px;
-  font-size: 13px;
-}
-.main-menu__nav :deep(.cv-button--ghost:hover:not(.cv-button--disabled)) {
-  background: rgba(230, 180, 34, 0.05);
-  border-color: var(--civ-gold-700);
-  color: var(--civ-text-secondary);
+.menu-link__text {
+  white-space: nowrap;
 }
 
 /* --- 底部信息栏 --- */
@@ -342,12 +324,11 @@ function goDev() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
-  border-top: 1px solid var(--civ-border-default);
-  background: rgba(10, 15, 26, 0.8);
-  backdrop-filter: blur(8px);
+  padding: 10px 32px;
+  border-top: 1px solid rgba(100, 80, 40, 0.2);
+  background: rgba(10, 8, 5, 0.6);
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(8px);
   transition: all 0.5s ease 0.8s;
 }
 .main-menu__footer.is-ready {
@@ -355,57 +336,63 @@ function goDev() {
   transform: translateY(0);
 }
 
-.footer__news {
+.footer__left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  overflow: hidden;
-  flex: 1;
+  gap: 24px;
 }
 
-.footer__news-label {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  background: var(--civ-gold-700);
-  color: var(--civ-gold-100);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  border-radius: var(--civ-radius-sm);
+.footer__logos {
+  font-family: var(--civ-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--civ-stone-500);
   text-transform: uppercase;
 }
 
-.footer__news-text {
-  font-size: 12px;
-  color: var(--civ-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .footer__version {
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--civ-text-muted);
+  font-size: 10px;
+  color: var(--civ-stone-600);
   font-family: monospace;
 }
 
+.footer__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer__build {
+  font-size: 10px;
+  color: var(--civ-stone-600);
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
 /* --- 响应式 --- */
-@media (max-width: 640px) {
-  .main-menu__title {
-    font-size: 40px;
+@media (max-width: 768px) {
+  .main-menu__header {
+    top: 24px;
+    left: 24px;
   }
-  .title__vi {
-    font-size: 48px;
+  .main-menu__title {
+    font-size: 28px;
+  }
+  .emblem__circle {
+    width: 36px;
+    height: 36px;
+  }
+  .emblem__roman {
+    font-size: 14px;
   }
   .main-menu__nav {
-    width: 280px;
+    right: 8%;
+    min-width: 160px;
   }
-  .main-menu__compass {
-    width: 48px;
-    height: 48px;
-    top: 16px;
-    left: 16px;
+  .menu-link {
+    font-size: 15px;
+    padding: 6px 16px;
   }
 }
 </style>

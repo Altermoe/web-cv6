@@ -108,31 +108,33 @@ function handleClick(e: MouseEvent) {
   border-radius: 999px;
 }
 
-/* Variant: primary (gold) */
+/* Variant: primary (semi-transparent dark + gold border, Civ6 menu style) */
 .cv-button--primary {
-  background: linear-gradient(180deg, var(--civ-gold-600) 0%, var(--civ-gold-800) 100%);
-  color: var(--civ-gold-50);
-  border-color: var(--civ-gold-600);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg, rgba(25, 30, 28, 0.92) 0%, rgba(18, 22, 20, 0.95) 100%);
+  color: var(--civ-gold-200);
+  border-color: rgba(180, 140, 40, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 .cv-button--primary:hover:not(.cv-button--disabled) {
-  background: linear-gradient(180deg, var(--civ-gold-500) 0%, var(--civ-gold-700) 100%);
+  background: linear-gradient(180deg, rgba(35, 42, 38, 0.95) 0%, rgba(25, 30, 28, 0.95) 100%);
   border-color: var(--civ-gold-500);
-  box-shadow: var(--civ-shadow-glow);
+  box-shadow: 0 0 16px rgba(230, 180, 34, 0.2);
+  color: var(--civ-gold-100);
 }
 .cv-button--primary:active:not(.cv-button--disabled) {
-  background: linear-gradient(180deg, var(--civ-gold-700) 0%, var(--civ-gold-900) 100%);
+  background: linear-gradient(180deg, rgba(15, 20, 18, 0.95) 0%, rgba(10, 14, 12, 0.98) 100%);
 }
 
 /* Variant: secondary (stone) */
 .cv-button--secondary {
-  background: linear-gradient(180deg, var(--civ-stone-600) 0%, var(--civ-stone-800) 100%);
-  color: var(--civ-stone-100);
-  border-color: var(--civ-stone-600);
+  background: linear-gradient(180deg, rgba(30, 35, 32, 0.85) 0%, rgba(22, 26, 24, 0.9) 100%);
+  color: var(--civ-stone-300);
+  border-color: var(--civ-stone-700);
 }
 .cv-button--secondary:hover:not(.cv-button--disabled) {
-  background: linear-gradient(180deg, var(--civ-stone-500) 0%, var(--civ-stone-700) 100%);
-  border-color: var(--civ-stone-500);
+  background: linear-gradient(180deg, rgba(40, 48, 44, 0.9) 0%, rgba(30, 35, 32, 0.9) 100%);
+  border-color: var(--civ-gold-700);
+  color: var(--civ-text-primary);
 }
 
 /* Variant: success */
@@ -179,6 +181,18 @@ function handleClick(e: MouseEvent) {
   box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
 }
 
+/* Variant: ghost (transparent) */
+.cv-button--ghost {
+  background: transparent;
+  color: var(--civ-text-muted);
+  border-color: transparent;
+}
+.cv-button--ghost:hover:not(.cv-button--disabled) {
+  background: rgba(230, 180, 34, 0.05);
+  border-color: rgba(180, 140, 40, 0.3);
+  color: var(--civ-text-secondary);
+}
+
 /* States */
 .cv-button--disabled {
   opacity: 0.5;
@@ -209,15 +223,3 @@ function handleClick(e: MouseEvent) {
   }
 }
 </style>
-
-/* Variant: ghost (transparent) */
-.cv-button--ghost {
-  background: transparent;
-  color: var(--civ-text-muted);
-  border-color: var(--civ-border-default);
-}
-.cv-button--ghost:hover:not(.cv-button--disabled) {
-  background: rgba(230, 180, 34, 0.05);
-  border-color: var(--civ-gold-700);
-  color: var(--civ-text-secondary);
-}
