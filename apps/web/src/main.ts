@@ -1,4 +1,5 @@
 import "virtual:uno.css";
+import "@webcv6/ui/styles";
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";

@@ -7,6 +7,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   splitting: false,
+  external: ["playwright-core", "chromium-bidi"],
   banner: {
     js: "#!/usr/bin/env node",
   },
