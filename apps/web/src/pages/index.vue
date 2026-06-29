@@ -25,7 +25,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { label: "额外内容", icon: "⚙", disabled: true },
-  { label: "单人游戏", action: () => router.push("/scene") },
+  { label: "单人游戏", action: () => router.push("/game/create") },
   { label: "多人游戏", disabled: true },
   { label: "游戏设置", disabled: true },
   { label: "组件文档", action: () => router.push("/development") },
