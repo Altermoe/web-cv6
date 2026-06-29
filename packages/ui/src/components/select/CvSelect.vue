@@ -1,9 +1,28 @@
 <script setup lang="ts">
 /**
  * CvSelect — Civ 6 styled dropdown select
- * Stone-bordered dropdown with gold highlight on selected item.
+ * Built on reka-ui Select primitives with ScrollArea for long lists.
  */
-import { computed, nextTick, ref } from "vue";
+import { computed } from "vue";
+import {
+  SelectContent,
+  SelectIcon,
+  SelectItem,
+  SelectItemIndicator,
+  SelectItemText,
+  SelectPortal,
+  SelectRoot,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from "reka-ui";
+import {
+  ScrollAreaRoot,
+  ScrollAreaScrollbar,
+  ScrollAreaThumb,
+  ScrollAreaViewport,
+} from "reka-ui";
 import type { UiSize } from "../../types/common";
 
 export interface SelectOption {
@@ -35,33 +54,16 @@ const emit = defineEmits<{
   change: [value: string | number];
 }>();
 
-const open = ref(false);
-const dropdownRef = ref<HTMLDivElement>();
-
-const selectedLabel = computed(() => {
-  const opt = props.options.find((o) => o.value === props.modelValue);
-  return opt?.label ?? "";
-});
-
 const classes = computed(() => [
   "cv-select",
   `cv-select--${props.size}`,
-  {
-    "cv-select--open": open.value,
-    "cv-select--disabled": props.disabled,
-  },
+  { "cv-select--disabled": props.disabled },
 ]);
 
-function toggle() {
-  if (props.disabled) return;
-  open.value = !open.value;
-}
-
-function select(option: SelectOption) {
-  if (option.disabled) return;
-  emit("update:modelValue", option.value);
-  emit("change", option.value);
-  open.value = false;
+function onUpdate(val: string | number | undefined) {
+  const v = val ?? "";
+  emit("update:modelValue", v);
+  emit("change", v);
 }
 
 function onClear(e: MouseEvent) {
@@ -69,46 +71,57 @@ function onClear(e: MouseEvent) {
   emit("update:modelValue", "");
   emit("change", "");
 }
-
-function onClickOutside(e: MouseEvent) {
-  if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
-    open.value = false;
-  }
-}
-
-// Register global click listener
-nextTick(() => {
-  if (typeof document !== "undefined") {
-    document.addEventListener("click", onClickOutside);
-  }
-});
 </script>
 
 <template>
-  <div ref="dropdownRef" :class="classes" @click="toggle">
-    <div class="cv-select__trigger">
-      <span class="cv-select__value">{{ selectedLabel || placeholder }}</span>
-      <span v-if="clearable && modelValue != null && modelValue !== ''" class="cv-select__clear" @click="onClear">✕</span>
-      <span class="cv-select__arrow" :class="{ 'cv-select__arrow--open': open }">▾</span>
-    </div>
-    <Transition name="cv-select-dropdown">
-      <div v-if="open" class="cv-select__dropdown">
-        <div
-          v-for="opt in options"
-          :key="opt.value"
-          class="cv-select__option"
-          :class="{
-            'cv-select__option--selected': opt.value === modelValue,
-            'cv-select__option--disabled': opt.disabled,
-          }"
-          @click.stop="select(opt)"
-        >
-          <span v-if="opt.icon" class="cv-select__option-icon">{{ opt.icon }}</span>
-          {{ opt.label }}
-        </div>
-        <div v-if="options.length === 0" class="cv-select__empty">无选项</div>
-      </div>
-    </Transition>
+  <div :class="classes">
+    <SelectRoot
+      :model-value="modelValue"
+      :disabled="disabled"
+      @update:model-value="onUpdate"
+    >
+      <SelectTrigger class="cv-select__trigger">
+        <SelectValue :placeholder="placeholder" class="cv-select__value" />
+        <SelectIcon class="cv-select__arrow">▾</SelectIcon>
+      </SelectTrigger>
+
+      <SelectPortal>
+        <SelectContent class="cv-select__content" position="popper" :side-offset="4">
+          <ScrollAreaRoot type="auto" class="cv-select__scroll-root">
+            <SelectViewport as-child>
+              <ScrollAreaViewport class="cv-select__scroll-viewport">
+                <SelectItem
+                  v-for="opt in options"
+                  :key="String(opt.value)"
+                  :value="opt.value"
+                  :disabled="opt.disabled"
+                  class="cv-select__item"
+                >
+                  <span v-if="opt.icon" class="cv-select__item-icon">{{ opt.icon }}</span>
+                  <SelectItemText>{{ opt.label }}</SelectItemText>
+                  <SelectItemIndicator class="cv-select__indicator">✓</SelectItemIndicator>
+                </SelectItem>
+
+                <SelectSeparator v-if="options.length > 0" class="cv-select__separator" />
+              </ScrollAreaViewport>
+            </SelectViewport>
+
+            <ScrollAreaScrollbar
+              class="cv-select__scrollbar"
+              orientation="vertical"
+            >
+              <ScrollAreaThumb class="cv-select__scrollbar-thumb" />
+            </ScrollAreaScrollbar>
+          </ScrollAreaRoot>
+        </SelectContent>
+      </SelectPortal>
+    </SelectRoot>
+
+    <span
+      v-if="clearable && modelValue != null && modelValue !== ''"
+      class="cv-select__clear"
+      @click="onClear"
+    >✕</span>
   </div>
 </template>
 
@@ -117,51 +130,56 @@ nextTick(() => {
   display: inline-flex;
   align-items: center;
   position: relative;
+  font-family: var(--civ-font-sans);
+  user-select: none;
+}
+
+/* === Trigger === */
+.cv-select__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: var(--civ-bg-primary);
   border: 1px solid var(--civ-border-default);
   cursor: pointer;
   font-family: var(--civ-font-sans);
   transition: all var(--civ-transition-fast);
-  user-select: none;
+  outline: none;
+  width: 100%;
+}
+
+.cv-select__trigger[data-state="open"] {
+  border-color: var(--civ-gold-400);
+  box-shadow: 0 0 0 2px rgba(230, 180, 34, 0.2);
+}
+
+.cv-select__trigger[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Sizes */
-.cv-select--sm {
+.cv-select--sm .cv-select__trigger {
   height: 28px;
   padding: 0 8px;
   font-size: 12px;
 }
-.cv-select--md {
+.cv-select--md .cv-select__trigger {
   height: 36px;
   padding: 0 12px;
   font-size: 14px;
 }
-.cv-select--lg {
+.cv-select--lg .cv-select__trigger {
   height: 44px;
   padding: 0 16px;
   font-size: 16px;
 }
-.cv-select--xl {
+.cv-select--xl .cv-select__trigger {
   height: 52px;
   padding: 0 20px;
   font-size: 18px;
 }
 
-.cv-select--open {
-  border-color: var(--civ-gold-400);
-  box-shadow: 0 0 0 2px rgba(230, 180, 34, 0.2);
-}
-.cv-select--disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cv-select__trigger {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
 .cv-select__value {
   flex: 1;
   overflow: hidden;
@@ -169,72 +187,120 @@ nextTick(() => {
   white-space: nowrap;
   color: var(--civ-text-primary);
 }
+
 .cv-select__arrow {
   color: var(--civ-text-muted);
-  transition: transform var(--civ-transition-fast);
   font-size: 10px;
+  transition: transform var(--civ-transition-fast);
 }
-.cv-select__arrow--open {
-  transform: rotate(180deg);
-}
+
 .cv-select__clear {
+  position: absolute;
+  right: 28px;
   color: var(--civ-text-muted);
   font-size: 12px;
   cursor: pointer;
+  line-height: 1;
 }
 .cv-select__clear:hover {
   color: var(--civ-danger);
 }
 
-/* Dropdown */
-.cv-select__dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  min-width: 100%;
+/* === Content (dropdown) === */
+.cv-select__content {
+  z-index: 1000;
   background: var(--civ-bg-panel);
   border: 1px solid var(--civ-gold-700);
   box-shadow: var(--civ-shadow-lg);
-  z-index: 1000;
-  max-height: 240px;
-  overflow-y: auto;
+  border-radius: var(--civ-radius-md);
+  overflow: hidden;
+  min-width: var(--reka-select-trigger-width);
+  max-height: 280px;
 }
-.cv-select__option {
+
+.cv-select__scroll-root {
+  width: 100%;
+  max-height: 280px;
+}
+
+.cv-select__scroll-viewport {
+  width: 100%;
+  max-height: 280px;
+  padding: 4px 0;
+}
+
+/* === Scrollbar === */
+.cv-select__scrollbar {
+  display: flex;
+  user-select: none;
+  touch-action: none;
+  width: 8px;
+  padding: 2px;
+  transition: background var(--civ-transition-fast);
+  background: rgba(26, 25, 21, 0.3);
+  border-radius: 8px;
+}
+
+.cv-select__scrollbar:hover {
+  background: rgba(26, 25, 21, 0.5);
+}
+
+.cv-select__scrollbar-thumb {
+  flex: 1;
+  background: var(--civ-stone-500);
+  border-radius: 8px;
+  border: 1px solid var(--civ-stone-700);
+  transition: background var(--civ-transition-fast);
+}
+
+.cv-select__scrollbar-thumb:hover {
+  background: var(--civ-gold-600);
+  border-color: var(--civ-gold-500);
+}
+
+/* === Items === */
+.cv-select__item {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
   color: var(--civ-text-primary);
+  cursor: pointer;
+  outline: none;
   transition: background var(--civ-transition-fast);
+  font-size: inherit;
+  position: relative;
+  border-radius: 0;
 }
-.cv-select__option:hover:not(.cv-select__option--disabled) {
+
+.cv-select__item[data-highlighted] {
   background: var(--civ-bg-surface);
 }
-.cv-select__option--selected {
+
+.cv-select__item[data-state="checked"] {
   background: rgba(230, 180, 34, 0.15);
   color: var(--civ-gold-400);
-  border-left: 2px solid var(--civ-gold-500);
 }
-.cv-select__option--disabled {
+
+.cv-select__item[data-disabled] {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.cv-select__empty {
-  padding: 8px 12px;
-  color: var(--civ-text-muted);
-  text-align: center;
+
+.cv-select__item-icon {
+  margin-right: 2px;
+}
+
+.cv-select__indicator {
+  position: absolute;
+  right: 8px;
+  color: var(--civ-gold-500);
   font-size: 12px;
 }
 
-/* Transition */
-.cv-select-dropdown-enter-active,
-.cv-select-dropdown-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.cv-select-dropdown-enter-from,
-.cv-select-dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
+.cv-select__separator {
+  height: 1px;
+  background: var(--civ-border-default);
+  margin: 4px 0;
 }
 </style>

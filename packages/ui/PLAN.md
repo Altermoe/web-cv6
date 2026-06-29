@@ -12,14 +12,14 @@
 
 ---
 
-## 已完成组件（18 个）
+## 已完成组件（19 个）
 
 ### 基础组件
 | 组件 | 文件 | 变体/特性 |
 |------|------|-----------|
 | CvButton | button/ | 6 变体（primary/secondary/ghost/danger/gold/stone）× 4 尺寸 × 3 形状 + 加载态 |
 | CvInput | input/ | 前缀/后缀图标、清空按钮、密码切换 |
-| CvSelect | select/ | 下拉选择、图标选项、清空功能 |
+| CvSelect | select/ | 基于 reka-ui Select、ScrollArea 滚动、图标选项、清空功能 |
 | CvCheckbox | checkbox/ | 复选框 |
 | CvRadio | radio/ | 单选框 |
 | CvSlider | slider/ | 滑块 |
@@ -51,6 +51,11 @@
 | 组件 | 文件 | 变体/特性 |
 |------|------|-----------|
 | CvUnitBar | unit-bar/ | 单位生命/行动值 |
+
+### 滚动
+| 组件 | 文件 | 变体/特性 |
+|------|------|-----------|
+| CvScrollArea | scroll-area/ | 基于 reka-ui ScrollArea、Civ 6 风格滚动条、hover 模式 |
 
 ---
 

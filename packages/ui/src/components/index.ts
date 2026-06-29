@@ -32,5 +32,8 @@ export { CvPopover } from "./popover";
 export { CvModal } from "./modal";
 export { CvToast } from "./toast";
 
+// === Scroll ===
+export { CvScrollArea } from "./scroll-area";
+
 // === Game-Specific ===
 export { CvUnitBar } from "./unit-bar";
