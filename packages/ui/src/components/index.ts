@@ -13,6 +13,7 @@ export type { SelectOption } from "./select";
 export { CvCheckbox } from "./checkbox";
 export { CvRadio } from "./radio";
 export { CvSlider } from "./slider";
+export { CvSwitch } from "./switch";
 
 // === Data Display ===
 export { CvProgress } from "./progress";
