@@ -2,6 +2,10 @@
 /**
  * CvSelect — Civ 6 styled dropdown select
  * Built on reka-ui Select primitives with ScrollArea for long lists.
+ *
+ * NOTE: Portal 后的下拉面板样式放在非 scoped style 块中，
+ * 因为 reka-ui 的 SelectPortal + PopperContent (inheritAttrs:false)
+ * 会阻断 Vue scoped CSS 的 data-v-xxx 属性传递。
  */
 import { computed } from "vue";
 import {
@@ -17,12 +21,7 @@ import {
   SelectValue,
   SelectViewport,
 } from "reka-ui";
-import {
-  ScrollAreaRoot,
-  ScrollAreaScrollbar,
-  ScrollAreaThumb,
-  ScrollAreaViewport,
-} from "reka-ui";
+import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from "reka-ui";
 import type { UiSize } from "../../types/common";
 
 export interface SelectOption {
@@ -75,18 +74,14 @@ function onClear(e: MouseEvent) {
 
 <template>
   <div :class="classes">
-    <SelectRoot
-      :model-value="modelValue"
-      :disabled="disabled"
-      @update:model-value="onUpdate"
-    >
+    <SelectRoot :model-value="modelValue" :disabled="disabled" @update:model-value="onUpdate">
       <SelectTrigger class="cv-select__trigger">
         <SelectValue :placeholder="placeholder" class="cv-select__value" />
         <SelectIcon class="cv-select__arrow">▾</SelectIcon>
       </SelectTrigger>
 
       <SelectPortal>
-        <SelectContent class="cv-select__content" position="popper" :side-offset="4">
+        <SelectContent class="cv-select__content" position="popper" align="start" :side-offset="4">
           <ScrollAreaRoot type="auto" class="cv-select__scroll-root">
             <SelectViewport as-child>
               <ScrollAreaViewport class="cv-select__scroll-viewport">
@@ -106,10 +101,7 @@ function onClear(e: MouseEvent) {
               </ScrollAreaViewport>
             </SelectViewport>
 
-            <ScrollAreaScrollbar
-              class="cv-select__scrollbar"
-              orientation="vertical"
-            >
+            <ScrollAreaScrollbar class="cv-select__scrollbar" orientation="vertical">
               <ScrollAreaThumb class="cv-select__scrollbar-thumb" />
             </ScrollAreaScrollbar>
           </ScrollAreaRoot>
@@ -121,10 +113,14 @@ function onClear(e: MouseEvent) {
       v-if="clearable && modelValue != null && modelValue !== ''"
       class="cv-select__clear"
       @click="onClear"
-    >✕</span>
+      >✕</span
+    >
   </div>
 </template>
 
+<!--
+  Scoped styles: 仅控制 trigger 部分（在组件模板内，scoped 可生效）
+-->
 <style scoped>
 .cv-select {
   display: inline-flex;
@@ -205,8 +201,17 @@ function onClear(e: MouseEvent) {
 .cv-select__clear:hover {
   color: var(--civ-danger);
 }
+</style>
 
-/* === Content (dropdown) === */
+<!--
+  非 scoped styles: 控制 portal 后的下拉面板内容。
+  reka-ui 的 SelectPortal 将内容 teleport 到 body，
+  且 PopperContent 设置了 inheritAttrs: false，
+  导致 Vue scoped data-v-xxx 属性无法穿透，
+  因此这些样式必须放在非 scoped 块中。
+-->
+<style>
+/* === Content (dropdown panel) === */
 .cv-select__content {
   z-index: 1000;
   background: var(--civ-bg-panel);
